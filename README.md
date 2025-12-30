@@ -1,76 +1,23 @@
-# 💰 Sistema de Fluxo de Caixa
+## 🔐 Sistema de Autenticação
 
-Sistema completo de controle financeiro desenvolvido com Firebase e HTML/JavaScript puro.
+O sistema agora possui autenticação segura com:
 
-## 🚀 Funcionalidades
+- ✅ **Login com email/senha**
+- ✅ **Cadastro de novos usuários**
+- ✅ **Login com Google**
+- ✅ **Recuperação de senha**
+- ✅ **Dados isolados por usuário**
+- ✅ **Logout seguro**
 
-- ✅ Lançamento de receitas e despesas
-- ✅ Categorização detalhada de movimentos
-- ✅ Cancelamento de lançamentos
-- ✅ Relatórios e gráficos interativos
-- ✅ Filtros por período
-- ✅ Exportação de dados
-- ✅ Interface responsiva
-- ✅ Banco de dados em tempo real
+### Como Acessar
 
-## 🔧 Tecnologias Utilizadas
+1. **Primeira vez**: Acesse o sistema e clique em "Cadastrar"
+2. **Usuários existentes**: Faça login com email e senha
+3. **Login rápido**: Use "Entrar com Google"
 
-- **Frontend**: HTML5, CSS3, JavaScript ES6+
-- **Database**: Firebase Firestore (NoSQL)
-- **Charts**: Chart.js
-- **UI Framework**: Bootstrap 5
-- **Hosting**: GitHub Pages
+### Segurança
 
-## 📱 Acesso ao Sistema
-
-**🌐 [Acessar Sistema](https://[seu-usuario].github.io/sistema-fluxo-caixa/)**
-
-## 📋 Como Usar
-
-1. Acesse o link do sistema
-2. Configure suas categorias
-3. Comece a registrar suas receitas e despesas
-4. Acompanhe seu fluxo de caixa pelos relatórios
-
-## 🛠️ Configuração Local
-
-### Pré-requisitos
-- Projeto Firebase configurado
-- Firestore Database ativo
-
-### Configuração
-1. Clone o repositório
-2. Configure o Firebase no arquivo `index.html`
-3. Abra o `index.html` no navegador
-
-## 📊 Principais Recursos
-
-### Receitas
-- Vendas no Espetinho
-- Festas e Eventos
-- Dividendos e Investimentos
-- Empréstimos e Reembolsos
-
-### Despesas
-- Operacionais (Frete, Embalagens)
-- Pessoal (Salários, Benefícios)
-- Impostos e Taxas
-- Infraestrutura (Aluguel, Energia)
-
-## 🔒 Segurança
-
-- Dados armazenados no Firebase
-- Regras de segurança configuradas
-- Acesso controlado
-
-## 📞 Suporte
-
-Para dúvidas ou sugestões, abra uma [Issue](https://github.com/[seu-usuario]/sistema-fluxo-caixa/issues).
-
-## 📄 Licença
-
-MIT License - veja o arquivo [LICENSE](LICENSE) para detalhes.
-
----
-
-**Desenvolvido para controle financeiro eficiente** 💼
+- Cada usuário acessa apenas seus próprios dados
+- Senhas criptografadas pelo Firebase
+- Sessões seguras
+- Regras de segurança no banco de dados
