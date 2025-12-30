@@ -151,7 +151,7 @@
                                 </select>
                             </div>
                             <div class="mb-3">
-                                <label for="valorOrcamentoReceita" class="form-label">Valor Orçado (R\$)</label>
+                                <label for="valorOrcamentoReceita" class="form-label">Valor Orçado (R$)</label>
                                 <input type="number" class="form-control" id="valorOrcamentoReceita" step="0.01" min="0" required>
                             </div>
                             <div class="mb-3">
@@ -234,7 +234,7 @@
                                 </select>
                             </div>
                             <div class="mb-3">
-                                <label for="valorOrcamentoDespesa" class="form-label">Valor Orçado (R\$)</label>
+                                <label for="valorOrcamentoDespesa" class="form-label">Valor Orçado (R$)</label>
                                 <input type="number" class="form-control" id="valorOrcamentoDespesa" step="0.01" min="0" required>
                             </div>
                             <div class="mb-3">
@@ -285,14 +285,14 @@
                             <!-- Resumo -->
                             <div class="tab-pane fade show active" id="resumo" role="tabpanel">
                                 <div id="relatorioResumo">
-                                    <!-- Conteúdo será carregado via JavaScript -->
+                                    <p class="text-center text-muted">Carregando relatório...</p>
                                 </div>
                             </div>
 
                             <!-- Detalhado -->
                             <div class="tab-pane fade" id="detalhado" role="tabpanel">
                                 <div id="relatorioDetalhado">
-                                    <!-- Conteúdo será carregado via JavaScript -->
+                                    <p class="text-center text-muted">Carregando relatório detalhado...</p>
                                 </div>
                             </div>
 
@@ -327,7 +327,7 @@
                     </div>
                     <div class="card-body">
                         <div id="listaOrcamentos" class="table-responsive">
-                            <!-- Orçamentos serão carregados aqui -->
+                            <p class="text-center text-muted">Carregando orçamentos...</p>
                         </div>
                     </div>
                 </div>
@@ -372,14 +372,15 @@
             Timestamp 
         } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js'
 
+        // SUBSTITUA PELAS SUAS CONFIGURAÇÕES DO FIREBASE
         const firebaseConfig = {
-          apiKey: "AIzaSyA3e7KB1R1SbYb_HKGm52DyqAEeAN9Qpdw",
-          authDomain: "sistema-fluxo-caixa-espetinho.firebaseapp.com",
-          projectId: "sistema-fluxo-caixa-espetinho",
-          storageBucket: "sistema-fluxo-caixa-espetinho.firebasestorage.app",
-          messagingSenderId: "628667049442",
-          appId: "1:628667049442:web:125e5eb32a3274dcad05bb"
-        }
+              apiKey: "AIzaSyA3e7KB1R1SbYb_HKGm52DyqAEeAN9Qpdw",
+              authDomain: "sistema-fluxo-caixa-espetinho.firebaseapp.com",
+              projectId: "sistema-fluxo-caixa-espetinho",
+              storageBucket: "sistema-fluxo-caixa-espetinho.firebasestorage.app",
+              messagingSenderId: "628667049442",
+              appId: "1:628667049442:web:125e5eb32a3274dcad05bb"
+            }
 
         // Inicializar Firebase
         const app = initializeApp(firebaseConfig)
@@ -390,7 +391,13 @@
         let movimentos = []
         let chart = null
 
+        // Inicializar sistema quando a página carregar
+        window.addEventListener('load', () => {
+            inicializarSistema()
+        })
+
         function inicializarSistema() {
+            console.log('Inicializando sistema de orçamento...')
             configurarAnos()
             configurarMesAtual()
             configurarEventos()
@@ -400,6 +407,9 @@
         function configurarAnos() {
             const anoSelect = document.getElementById('anoSelecionado')
             const anoAtual = new Date().getFullYear()
+            
+            // Limpar opções existentes
+            anoSelect.innerHTML = ''
             
             // Adicionar anos (atual - 2 até atual + 5)
             for (let ano = anoAtual - 2; ano <= anoAtual + 5; ano++) {
@@ -412,4 +422,676 @@
         }
 
         function configurarMesAtual() {
-            const mesAt
+            const mesAtual = new Date().getMonth() + 1
+            document.getElementById('mesSelecionado').value = mesAtual
+        }
+
+        function configurarEventos() {
+            // Formulários
+            document.getElementById('formOrcamentoReceita').addEventListener('submit', (e) => {
+                e.preventDefault()
+                adicionarOrcamentoReceita()
+            })
+
+            document.getElementById('formOrcamentoDespesa').addEventListener('submit', (e) => {
+                e.preventDefault()
+                adicionarOrcamentoDespesa()
+            })
+
+            // Mudança de ano
+            document.getElementById('anoSelecionado').addEventListener('change', () => {
+                atualizarRelatorios()
+            })
+
+            // Configurar confirmação de exclusão
+            document.getElementById('confirmarExclusao').addEventListener('click', async () => {
+                if (window.itemParaExcluir) {
+                    try {
+                        await deleteDoc(doc(db, 'orcamentos', window.itemParaExcluir))
+                        mostrarMensagem('Orçamento excluído com sucesso!', 'success')
+                        
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmacao'))
+                        modal.hide()
+                        
+                        window.itemParaExcluir = null
+                    } catch (error) {
+                        mostrarMensagem('Erro ao excluir orçamento: ' + error.message, 'error')
+                    }
+                }
+            })
+        }
+
+        async function adicionarOrcamentoReceita() {
+            const categoria = document.getElementById('categoriaOrcamentoReceita').value
+            const valor = parseFloat(document.getElementById('valorOrcamentoReceita').value)
+            const descricao = document.getElementById('descricaoOrcamentoReceita').value
+            const ano = parseInt(document.getElementById('anoSelecionado').value)
+            const mes = parseInt(document.getElementById('mesSelecionado').value)
+
+            if (!categoria || !valor || !ano || !mes) {
+                mostrarMensagem('Por favor, preencha todos os campos obrigatórios.', 'warning')
+                return
+            }
+
+            const orcamento = {
+                tipo: 'receita',
+                categoria: categoria,
+                valor: valor,
+                ano: ano,
+                mes: mes,
+                descricao: descricao,
+                timestamp: Timestamp.now()
+            }
+
+            try {
+                await addDoc(collection(db, 'orcamentos'), orcamento)
+                limparFormulario('formOrcamentoReceita')
+                mostrarMensagem('Orçamento de receita registrado com sucesso!', 'success')
+            } catch (error) {
+                console.error('Erro ao registrar orçamento:', error)
+                mostrarMensagem('Erro ao registrar orçamento: ' + error.message, 'error')
+            }
+        }
+
+        async function adicionarOrcamentoDespesa() {
+            const categoria = document.getElementById('categoriaOrcamentoDespesa').value
+            const valor = parseFloat(document.getElementById('valorOrcamentoDespesa').value)
+            const descricao = document.getElementById('descricaoOrcamentoDespesa').value
+            const ano = parseInt(document.getElementById('anoSelecionado').value)
+            const mes = parseInt(document.getElementById('mesSelecionado').value)
+
+            if (!categoria || !valor || !ano || !mes) {
+                mostrarMensagem('Por favor, preencha todos os campos obrigatórios.', 'warning')
+                return
+            }
+
+            const orcamento = {
+                tipo: 'despesa',
+                categoria: categoria,
+                valor: valor,
+                ano: ano,
+                mes: mes,
+                descricao: descricao,
+                timestamp: Timestamp.now()
+            }
+
+            try {
+                await addDoc(collection(db, 'orcamentos'), orcamento)
+                limparFormulario('formOrcamentoDespesa')
+                mostrarMensagem('Orçamento de despesa registrado com sucesso!', 'success')
+            } catch (error) {
+                console.error('Erro ao registrar orçamento:', error)
+                mostrarMensagem('Erro ao registrar orçamento: ' + error.message, 'error')
+            }
+        }
+
+        function carregarDados() {
+            console.log('Carregando dados...')
+            
+            // Carregar orçamentos
+            const qOrcamentos = query(
+                collection(db, 'orcamentos'),
+                orderBy('timestamp', 'desc')
+            )
+
+            onSnapshot(qOrcamentos, (snapshot) => {
+                orcamentos = []
+                snapshot.forEach((doc) => {
+                    orcamentos.push({
+                        id: doc.id,
+                        ...doc.data()
+                    })
+                })
+                console.log('Orçamentos carregados:', orcamentos.length)
+                atualizarListaOrcamentos()
+                atualizarRelatorios()
+            }, (error) => {
+                console.error('Erro ao carregar orçamentos:', error)
+                mostrarMensagem('Erro ao carregar orçamentos: ' + error.message, 'error')
+            })
+
+            // Carregar movimentos (fluxo de caixa)
+            const qMovimentos = query(
+                collection(db, 'movimentos'),
+                orderBy('timestamp', 'desc')
+            )
+
+            onSnapshot(qMovimentos, (snapshot) => {
+                movimentos = []
+                snapshot.forEach((doc) => {
+                    movimentos.push({
+                        id: doc.id,
+                        ...doc.data()
+                    })
+                })
+                console.log('Movimentos carregados:', movimentos.length)
+                atualizarRelatorios()
+            }, (error) => {
+                console.error('Erro ao carregar movimentos:', error)
+            })
+        }
+
+        function atualizarListaOrcamentos() {
+            const container = document.getElementById('listaOrcamentos')
+            const anoSelecionado = parseInt(document.getElementById('anoSelecionado').value)
+            
+            const orcamentosFiltrados = orcamentos.filter(orc => orc.ano === anoSelecionado)
+
+            if (orcamentosFiltrados.length === 0) {
+                container.innerHTML = '<p class="text-center text-muted">Nenhum orçamento encontrado para este ano.</p>'
+                return
+            }
+
+            let html = `
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Mês</th>
+                            <th>Tipo</th>
+                            <th>Categoria</th>
+                            <th>Descrição</th>
+                            <th class="text-end">Valor</th>
+                            <th width="100">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `
+
+            orcamentosFiltrados.forEach(orcamento => {
+                const nomesMeses = [
+                    'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+                    'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+                ]
+                
+                const tipoClass = orcamento.tipo === 'receita' ? 'movimento-receita' : 'movimento-despesa'
+                const tipoIcon = orcamento.tipo === 'receita' ? '📈' : '📉'
+
+                html += `
+                    <tr class="${tipoClass}">
+                        <td>${nomesMeses[orcamento.mes - 1]}</td>
+                        <td>${tipoIcon} ${orcamento.tipo.charAt(0).toUpperCase() + orcamento.tipo.slice(1)}</td>
+                        <td>${orcamento.categoria}</td>
+                        <td>${orcamento.descricao || '-'}</td>
+                        <td class="text-end ${orcamento.tipo === 'receita' ? 'text-success' : 'text-danger'}">
+                            ${formatarMoeda(orcamento.valor)}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-danger" onclick="confirmarExclusao('${orcamento.id}', '${orcamento.categoria}')">
+                                ��️
+                            </button>
+                        </td>
+                    </tr>
+                `
+            })
+
+            html += '</tbody></table>'
+            container.innerHTML = html
+        }
+
+        function atualizarRelatorios() {
+            atualizarRelatorioResumo()
+            atualizarRelatorioDetalhado()
+            atualizarGraficoComparativo()
+        }
+
+        function atualizarRelatorioResumo() {
+            const container = document.getElementById('relatorioResumo')
+            const anoSelecionado = parseInt(document.getElementById('anoSelecionado').value)
+            
+            const nomesMeses = [
+                'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+            ]
+
+            let html = '<div class="row">'
+
+            for (let mes = 1; mes <= 12; mes++) {
+                const dadosMes = calcularDadosMes(anoSelecionado, mes)
+                
+                html += `
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="comparativo-card">
+                            <div class="comparativo-header">
+                                <h6 class="mb-0">${nomesMeses[mes - 1]} ${anoSelecionado}</h6>
+                            </div>
+                            <div class="p-3">
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <h6 class="text-success">Receitas</h6>
+                                        <small class="badge badge-orcado mb-1">Orçado: ${formatarMoeda(dadosMes.receitasOrcadas)}</small><br>
+                                        <small class="badge badge-realizado">Realizado: ${formatarMoeda(dadosMes.receitasRealizadas)}</small>
+                                        <div class="mt-1">
+                                            <span class="badge ${dadosMes.variacao.receitas >= 0 ? 'badge-variacao-positiva' : 'badge-variacao-negativa'}">
+                                                ${dadosMes.variacao.receitas >= 0 ? '+' : ''}${formatarMoeda(dadosMes.variacao.receitas)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <h6 class="text-danger">Despesas</h6>
+                                        <small class="badge badge-orcado mb-1">Orçado: ${formatarMoeda(dadosMes.despesasOrcadas)}</small><br>
+                                        <small class="badge badge-realizado">Realizado: ${formatarMoeda(dadosMes.despesasRealizadas)}</small>
+                                        <div class="mt-1">
+                                            <span class="badge ${dadosMes.variacao.despesas <= 0 ? 'badge-variacao-positiva' : 'badge-variacao-negativa'}">
+                                                ${dadosMes.variacao.despesas >= 0 ? '+' : ''}${formatarMoeda(dadosMes.variacao.despesas)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="text-center">
+                                    <h6>Saldo</h6>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <small class="badge badge-orcado">Orçado: ${formatarMoeda(dadosMes.saldoOrcado)}</small>
+                                        </div>
+                                        <div class="col-6">
+                                            <small class="badge badge-realizado">Realizado: ${formatarMoeda(dadosMes.saldoRealizado)}</small>
+                                        </div>
+                                    </div>
+                                    <div class="mt-1">
+                                        <span class="badge ${dadosMes.variacao.saldo >= 0 ? 'badge-variacao-positiva' : 'badge-variacao-negativa'}">
+                                            Variação: ${dadosMes.variacao.saldo >= 0 ? '+' : ''}${formatarMoeda(dadosMes.variacao.saldo)}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            }
+
+            html += '</div>'
+            container.innerHTML = html
+        }
+
+        function atualizarRelatorioDetalhado() {
+            const container = document.getElementById('relatorioDetalhado')
+            const anoSelecionado = parseInt(document.getElementById('anoSelecionado').value)
+            
+            // Obter todas as categorias únicas
+            const todasCategorias = new Set()
+            orcamentos.forEach(orc => {
+                if (orc.ano === anoSelecionado) {
+                    todasCategorias.add(orc.categoria)
+                }
+            })
+            movimentos.forEach(mov => {
+                const dataMovimento = mov.data.toDate()
+                if (dataMovimento.getFullYear() === anoSelecionado) {
+                    todasCategorias.add(mov.categoria)
+                }
+            })
+
+            if (todasCategorias.size === 0) {
+                container.innerHTML = '<p class="text-center text-muted">Nenhum dado encontrado para análise detalhada.</p>'
+                return
+            }
+
+            const nomesMeses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+
+            let html = `
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm">
+                        <thead class="table-dark">
+                            <tr>
+                                <th rowspan="2">Categoria</th>
+                                <th rowspan="2">Tipo</th>
+            `
+
+            nomesMeses.forEach(mes => {
+                html += `<th colspan="3" class="text-center">${mes}</th>`
+            })
+
+            html += `
+                            </tr>
+                            <tr>
+            `
+
+            nomesMeses.forEach(() => {
+                html += `
+                    <th class="text-center" style="font-size: 0.8em;">Orçado</th>
+                    <th class="text-center" style="font-size: 0.8em;">Realizado</th>
+                    <th class="text-center" style="font-size: 0.8em;">Var.</th>
+                `
+            })
+
+            html += `
+                            </tr>
+                        </thead>
+                        <tbody>
+            `
+
+            Array.from(todasCategorias).sort().forEach(categoria => {
+                // Determinar o tipo predominante da categoria
+                const tipoCategoria = determinarTipoCategoria(categoria, anoSelecionado)
+                
+                html += `
+                    <tr>
+                        <td>${categoria}</td>
+                        <td class="text-center">
+                            <span class="badge ${tipoCategoria === 'receita' ? 'badge-receita bg-success' : 'badge-despesa bg-danger'}">
+                                ${tipoCategoria === 'receita' ? '📈' : '📉'}
+                            </span>
+                        </td>
+                `
+
+                for (let mes = 1; mes <= 12; mes++) {
+                    const dadosCategoriaMes = calcularDadosCategoriaMes(categoria, anoSelecionado, mes)
+                    
+                    html += `
+                        <td class="text-end" style="font-size: 0.8em;">${dadosCategoriaMes.orcado > 0 ? formatarMoedaCompacta(dadosCategoriaMes.orcado) : '-'}</td>
+                        <td class="text-end" style="font-size: 0.8em;">${dadosCategoriaMes.realizado > 0 ? formatarMoedaCompacta(dadosCategoriaMes.realizado) : '-'}</td>
+                        <td class="text-end" style="font-size: 0.8em;">
+                            ${dadosCategoriaMes.variacao !== 0 ? 
+                                `<span class="text-${dadosCategoriaMes.variacao >= 0 ? 'success' : 'danger'}">${dadosCategoriaMes.variacao >= 0 ? '+' : ''}${formatarMoedaCompacta(dadosCategoriaMes.variacao)}</span>` 
+                                : '-'}
+                        </td>
+                    `
+                }
+
+                html += '</tr>'
+            })
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `
+
+            container.innerHTML = html
+        }
+
+        function atualizarGraficoComparativo() {
+            const ctx = document.getElementById('graficoComparativo').getContext('2d')
+            
+            if (chart) {
+                chart.destroy()
+            }
+
+            const anoSelecionado = parseInt(document.getElementById('anoSelecionado').value)
+            const dadosGrafico = prepararDadosGrafico(anoSelecionado)
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+                    datasets: [
+                        {
+                            label: 'Receitas Orçadas',
+                            data: dadosGrafico.receitasOrcadas,
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            borderDash: [5, 5],
+                            fill: false
+                        },
+                        {
+                            label: 'Receitas Realizadas',
+                            data: dadosGrafico.receitasRealizadas,
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                            fill: false
+                        },
+                        {
+                            label: 'Despesas Orçadas',
+                            data: dadosGrafico.despesasOrcadas,
+                            borderColor: '#dc3545',
+                            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                            borderDash: [5, 5],
+                            fill: false
+                        },
+                        {
+                            label: 'Despesas Realizadas',
+                            data: dadosGrafico.despesasRealizadas,
+                            borderColor: '#dc3545',
+                            backgroundColor: 'rgba(220, 53, 69, 0.2)',
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 0 })
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': R$ ' + 
+                                           context.parsed.y.toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+                                }
+                            }
+                        },
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                }
+            })
+        }
+
+        function calcularDadosMes(ano, mes) {
+            // Calcular orçamentos do mês
+            const orcamentosMes = orcamentos.filter(orc => orc.ano === ano && orc.mes === mes)
+            const receitasOrcadas = orcamentosMes
+                .filter(orc => orc.tipo === 'receita')
+                .reduce((total, orc) => total + orc.valor, 0)
+            const despesasOrcadas = orcamentosMes
+                .filter(orc => orc.tipo === 'despesa')
+                .reduce((total, orc) => total + orc.valor, 0)
+
+            // Calcular realizados do mês
+            const movimentosMes = movimentos.filter(mov => {
+                const dataMovimento = mov.data.toDate()
+                return dataMovimento.getFullYear() === ano && dataMovimento.getMonth() === mes - 1
+            })
+            const receitasRealizadas = movimentosMes
+                .filter(mov => mov.valor > 0)
+                .reduce((total, mov) => total + mov.valor, 0)
+            const despesasRealizadas = Math.abs(movimentosMes
+                .filter(mov => mov.valor < 0)
+                .reduce((total, mov) => total + mov.valor, 0))
+
+            const saldoOrcado = receitasOrcadas - despesasOrcadas
+            const saldoRealizado = receitasRealizadas - despesasRealizadas
+
+            return {
+                receitasOrcadas,
+                despesasOrcadas,
+                receitasRealizadas,
+                despesasRealizadas,
+                saldoOrcado,
+                saldoRealizado,
+                variacao: {
+                    receitas: receitasRealizadas - receitasOrcadas,
+                    despesas: despesasRealizadas - despesasOrcadas,
+                    saldo: saldoRealizado - saldoOrcado
+                }
+            }
+        }
+
+        function calcularDadosCategoriaMes(categoria, ano, mes) {
+            // Orçado
+            const orcado = orcamentos
+                .filter(orc => orc.categoria === categoria && orc.ano === ano && orc.mes === mes)
+                .reduce((total, orc) => total + orc.valor, 0)
+
+            // Realizado
+            const realizado = movimentos
+                .filter(mov => {
+                    const dataMovimento = mov.data.toDate()
+                    return mov.categoria === categoria && 
+                           dataMovimento.getFullYear() === ano && 
+                           dataMovimento.getMonth() === mes - 1
+                })
+                .reduce((total, mov) => total + Math.abs(mov.valor), 0)
+
+            return {
+                orcado,
+                realizado,
+                variacao: realizado - orcado
+            }
+        }
+
+        function determinarTipoCategoria(categoria, ano) {
+            // Verificar nos orçamentos
+            const orcamentoCategoria = orcamentos.find(orc => 
+                orc.categoria === categoria && orc.ano === ano
+            )
+            if (orcamentoCategoria) {
+                return orcamentoCategoria.tipo
+            }
+
+            // Verificar nos movimentos
+            const movimentoCategoria = movimentos.find(mov => 
+                mov.categoria === categoria
+            )
+            if (movimentoCategoria) {
+                return movimentoCategoria.valor > 0 ? 'receita' : 'despesa'
+            }
+
+            return 'receita' // default
+        }
+
+        function prepararDadosGrafico(ano) {
+            const receitasOrcadas = []
+            const despesasOrcadas = []
+            const receitasRealizadas = []
+            const despesasRealizadas = []
+
+            for (let mes = 1; mes <= 12; mes++) {
+                const dados = calcularDadosMes(ano, mes)
+                receitasOrcadas.push(dados.receitasOrcadas)
+                despesasOrcadas.push(dados.despesasOrcadas)
+                receitasRealizadas.push(dados.receitasRealizadas)
+                despesasRealizadas.push(dados.despesasRealizadas)
+            }
+
+            return {
+                receitasOrcadas,
+                despesasOrcadas,
+                receitasRealizadas,
+                despesasRealizadas
+            }
+        }
+
+        // Funções utilitárias
+        function formatarMoeda(valor) {
+            return 'R$ ' + Math.abs(valor).toLocaleString('pt-BR', { 
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            })
+        }
+
+        function formatarMoedaCompacta(valor) {
+            if (Math.abs(valor) >= 1000000) {
+                return 'R$ ' + (valor / 1000000).toFixed(1) + 'M'
+            } else if (Math.abs(valor) >= 1000) {
+                return 'R$ ' + (valor / 1000).toFixed(1) + 'k'
+            } else {
+                return 'R$ ' + valor.toFixed(0)
+            }
+        }
+
+        function limparFormulario(formId) {
+            document.getElementById(formId).reset()
+        }
+
+        function mostrarMensagem(mensagem, tipo) {
+            const alertDiv = document.createElement('div')
+            alertDiv.className = `alert alert-${tipo === 'success' ? 'success' : tipo === 'warning' ? 'warning' : 'danger'} alert-dismissible fade show position-fixed`
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 10000; min-width: 300px;'
+            alertDiv.innerHTML = `
+                ${mensagem}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `
+            
+            document.body.appendChild(alertDiv)
+            
+            setTimeout(() => {
+                alertDiv.remove()
+            }, 5000)
+        }
+
+        // Funções globais para exclusão
+        window.itemParaExcluir = null
+
+        window.confirmarExclusao = function(id, categoria) {
+            window.itemParaExcluir = id
+            document.getElementById('mensagemConfirmacao').textContent = 
+                `Tem certeza que deseja excluir o orçamento da categoria "${categoria}"?`
+            
+            const modal = new bootstrap.Modal(document.getElementById('modalConfirmacao'))
+            modal.show()
+        }
+
+        window.exportarOrcamento = function() {
+            const anoSelecionado = parseInt(document.getElementById('anoSelecionado').value)
+            const orcamentosFiltrados = orcamentos.filter(orc => orc.ano === anoSelecionado)
+            
+            if (orcamentosFiltrados.length === 0) {
+                mostrarMensagem('Nenhum orçamento encontrado para exportar.', 'warning')
+                return
+            }
+            
+            const nomesMeses = [
+                'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+            ]
+
+            const dados = orcamentosFiltrados.map(orc => ({
+                Ano: orc.ano,
+                Mês: nomesMeses[orc.mes - 1],
+                Tipo: orc.tipo,
+                Categoria: orc.categoria,
+                'Valor Orçado': orc.valor,
+                Descrição: orc.descricao || ''
+            }))
+
+            const csv = [
+                ['Ano', 'Mês', 'Tipo', 'Categoria', 'Valor Orçado', 'Descrição'],
+                ...dados.map(row => Object.values(row))
+            ].map(row => row.join(';')).join('\n')
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+            const link = document.createElement('a')
+            link.href = URL.createObjectURL(blob)
+            link.download = `orcamento_${anoSelecionado}_${new Date().toISOString().split('T')[0]}.csv`
+            link.click()
+        }
+
+        window.limparOrcamento = function() {
+            if (confirm('Tem certeza que deseja excluir TODOS os orçamentos? Esta ação não pode ser desfeita!')) {
+                const anoSelecionado = parseInt(document.getElementById('anoSelecionado').value)
+                const orcamentosParaExcluir = orcamentos.filter(orc => orc.ano === anoSelecionado)
+                
+                if (orcamentosParaExcluir.length === 0) {
+                    mostrarMensagem('Nenhum orçamento encontrado para excluir.', 'warning')
+                    return
+                }
+                
+                Promise.all(orcamentosParaExcluir.map(orc => 
+                    deleteDoc(doc(db, 'orcamentos', orc.id))
+                )).then(() => {
+                    mostrarMensagem(`${orcamentosParaExcluir.length} orçamento(s) excluído(s) com sucesso!`, 'success')
+                }).catch(error => {
+                    console.error('Erro ao excluir orçamentos:', error)
+                    mostrarMensagem('Erro ao excluir orçamentos: ' + error.message, 'error')
+                })
+            }
+        }
+    </script>
+</body>
+</html>
