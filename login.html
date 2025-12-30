@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema de Fluxo de Caixa</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+        
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+        
+        .logo-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px 20px 0 0;
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+        }
+        
+        .btn-google {
+            background: #db4437;
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+        }
+        
+        .form-control {
+            border-radius: 10px;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .divider {
+            text-align: center;
+            margin: 20px 0;
+            position: relative;
+        }
+        
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #dee2e6;
+        }
+        
+        .divider span {
+            background: white;
+            padding: 0 15px;
+            color: #6c757d;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5">
+                <div class="login-card">
+                    <!-- Header -->
+                    <div class="logo-section">
+                        <h2 class="mb-0">💰</h2>
+                        <h4 class="mb-0">Sistema de Fluxo de Caixa</h4>
+                        <p class="mb-0 mt-2 opacity-75">Controle suas finanças com segurança</p>
+                    </div>
+                    
+                    <!-- Login Form -->
+                    <div class="p-4">
+                        <!-- Tabs -->
+                        <ul class="nav nav-pills nav-justified mb-4" id="authTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="login-tab" data-bs-toggle="pill" 
+                                        data-bs-target="#login" type="button" role="tab">
+                                    Entrar
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="register-tab" data-bs-toggle="pill" 
+                                        data-bs-target="#register" type="button" role="tab">
+                                    Cadastrar
+                                </button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content" id="authTabsContent">
+                            <!-- Login Tab -->
+                            <div class="tab-pane fade show active" id="login" role="tabpanel">
+                                <form id="loginForm">
+                                    <div class="mb-3">
+                                        <label for="loginEmail" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="loginEmail" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="loginPassword" class="form-label">Senha</label>
+                                        <input type="password" class="form-control" id="loginPassword" required>
+                                    </div>
+                                    
+                                    <div class="mb-3 form-check">
+                                        <input type="checkbox" class="form-check-input" id="rememberMe">
+                                        <label class="form-check-label" for="rememberMe">
+                                            Lembrar de mim
+                                        </label>
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-primary w-100 mb-3">
+                                        🔑 Entrar
+                                    </button>
+                                </form>
+                                
+                                <div class="divider">
+                                    <span>ou</span>
+                                </div>
+                                
+                                <button type="button" class="btn btn-google text-white w-100 mb-3" id="googleLogin">
+                                    🔍 Entrar com Google
+                                </button>
+                                
+                                <div class="text-center">
+                                    <a href="#" class="text-decoration-none" id="forgotPassword">
+                                        Esqueceu a senha?
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <!-- Register Tab -->
+                            <div class="tab-pane fade" id="register" role="tabpanel">
+                                <form id="registerForm">
+                                    <div class="mb-3">
+                                        <label for="registerName" class="form-label">Nome Completo</label>
+                                        <input type="text" class="form-control" id="registerName" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="registerEmail" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="registerEmail" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="registerPassword" class="form-label">Senha</label>
+                                        <input type="password" class="form-control" id="registerPassword" 
+                                               minlength="6" required>
+                                        <div class="form-text">Mínimo 6 caracteres</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="confirmPassword" class="form-label">Confirmar Senha</label>
+                                        <input type="password" class="form-control" id="confirmPassword" required>
+                                    </div>
+                                    
+                                    <div class="mb-3 form-check">
+                                        <input type="checkbox" class="form-check-input" id="acceptTerms" required>
+                                        <label class="form-check-label" for="acceptTerms">
+                                            Aceito os <a href="#" class="text-decoration-none">termos de uso</a>
+                                        </label>
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        👤 Criar Conta
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Loading Overlay -->
+                <div id="loadingOverlay" class="d-none position-fixed top-0 start-0 w-100 h-100" 
+                     style="background: rgba(0,0,0,0.5); z-index: 9999;">
+                    <div class="d-flex justify-content-center align-items-center h-100">
+                        <div class="spinner-border text-white" role="status">
+                            <span class="visually-hidden">Carregando...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js'
+        import { 
+            getAuth, 
+            signInWithEmailAndPassword, 
+            createUserWithEmailAndPassword,
+            signInWithPopup,
+            GoogleAuthProvider,
+            sendPasswordResetEmail,
+            updateProfile
+        } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js'
+        import { 
+            getFirestore, 
+            doc, 
+            setDoc,
+            getDoc
+        } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js'
+
+        // SUBSTITUA PELAS SUAS CONFIGURAÇÕES DO FIREBASE
+        const firebaseConfig = {
+            apiKey: "SUA-API-KEY-AQUI",
+            authDomain: "seu-projeto.firebaseapp.com",
+            projectId: "seu-projeto-id",
+            storageBucket: "seu-projeto.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "sua-app-id"
+        }
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig)
+        const auth = getAuth(app)
+        const db = getFirestore(app)
+        const googleProvider = new GoogleAuthProvider()
+
+        // Verificar se usuário já está logado
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // Usuário logado, redirecionar para o sistema
+                window.location.href = 'index.html'
+            }
+        })
+
+        // Classe para gerenciar autenticação
+        class AuthManager {
+            constructor() {
+                this.initializeEvents()
+            }
+
+            initializeEvents() {
+                // Form de login
+                document.getElementById('loginForm').addEventListener('submit', (e) => {
+                    e.preventDefault()
+                    this.login()
+                })
+
+                // Form de registro
+                document.getElementById('registerForm').addEventListener('submit', (e) => {
+                    e.preventDefault()
+                    this.register()
+                })
+
+                // Login com Google
+                document.getElementById('googleLogin').addEventListener('click', () => {
+                    this.loginWithGoogle()
+                })
+
+                // Esqueceu a senha
+                document.getElementById('forgotPassword').addEventListener('click', (e) => {
+                    e.preventDefault()
+                    this.resetPassword()
+                })
+            }
+
+            showLoading(show = true) {
+                const overlay = document.getElementById('loadingOverlay')
+                if (show) {
+                    overlay.classList.remove('d-none')
+                } else {
+                    overlay.classList.add('d-none')
+                }
+            }
+
+            showMessage(message, type = 'success') {
+                const alertDiv = document.createElement('div')
+                alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`
+                alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 10000; min-width: 300px;'
+                alertDiv.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `
+                
+                document.body.appendChild(alertDiv)
+                
+                setTimeout(() => {
+                    alertDiv.remove()
+                }, 5000)
+            }
+
+            async login() {
+                const email = document.getElementById('loginEmail').value
+                const password = document.getElementById('loginPassword').value
+
+                if (!email || !password) {
+                    this.showMessage('Por favor, preencha todos os campos.', 'warning')
+                    return
+                }
+
+                this.showLoading(true)
+
+                try {
+                    const userCredential = await signInWithEmailAndPassword(auth, email, password)
+                    this.showMessage('Login realizado com sucesso!', 'success')
+                    
+                    // Redirecionar após 1 segundo
+                    setTimeout(() => {
+                        window.location.href = 'index.html'
+                    }, 1000)
+                    
+                } catch (error) {
+                    this.showLoading(false)
+                    this.handleAuthError(error)
+                }
+            }
+
+            async register() {
+                const name = document.getElementById('registerName').value
+                const email = document.getElementById('registerEmail').value
+                const password = document.getElementById('registerPassword').value
+                const confirmPassword = document.getElementById('confirmPassword').value
+
+                // Validações
+                if (!name || !email || !password || !confirmPassword) {
+                    this.showMessage('Por favor, preencha todos os campos.', 'warning')
+                    return
+                }
+
+                if (password !== confirmPassword) {
+                    this.showMessage('As senhas não coincidem.', 'warning')
+                    return
+                }
+
+                if (password.length < 6) {
+                    this.showMessage('A senha deve ter pelo menos 6 caracteres.', 'warning')
+                    return
+                }
+
+                this.showLoading(true)
+
+                try {
+                    // Criar usuário
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+                    const user = userCredential.user
+
+                    // Atualizar perfil
+                    await updateProfile(user, {
+                        displayName: name
+                    })
+
+                    // Criar documento do usuário no Firestore
+                    await setDoc(doc(db, 'usuarios', user.uid), {
+                        nome: name,
+                        email: email,
+                        criadoEm: new Date(),
+                        configuracoes: {
+                            moeda: 'BRL',
+                            tema: 'light'
+                        }
+                    })
+
+                    this.showMessage('Conta criada com sucesso!', 'success')
+                    
+                    // Redirecionar após 1 segundo
+                    setTimeout(() => {
+                        window.location.href = 'index.html'
+                    }, 1000)
+                    
+                } catch (error) {
+                    this.showLoading(false)
+                    this.handleAuthError(error)
+                }
+            }
+
+            async loginWithGoogle() {
+                this.showLoading(true)
+
+                try {
+                    const result = await signInWithPopup(auth, googleProvider)
+                    const user = result.user
+
+                    // Verificar se é a primeira vez do usuário
+                    const userDoc = await getDoc(doc(db, 'usuarios', user.uid))
+                    
+                    if (!userDoc.exists()) {
+                        // Criar documento do usuário no Firestore
+                        await setDoc(doc(db, 'usuarios', user.uid), {
+                            nome: user.displayName,
+                            email: user.email,
+                            criadoEm: new Date(),
+                            configuracoes: {
+                                moeda: 'BRL',
+                                tema: 'light'
+                            }
+                        })
+                    }
+
+                    this.showMessage('Login com Google realizado com sucesso!', 'success')
+                    
+                    // Redirecionar após 1 segundo
+                    setTimeout(() => {
+                        window.location.href = 'index.html'
+                    }, 1000)
+                    
+                } catch (error) {
+                    this.showLoading(false)
+                    this.handleAuthError(error)
+                }
+            }
+
+            async resetPassword() {
+                const email = document.getElementById('loginEmail').value
+
+                if (!email) {
+                    this.showMessage('Digite seu email no campo acima primeiro.', 'warning')
+                    return
+                }
+
+                this.showLoading(true)
+
+                try {
+                    await sendPasswordResetEmail(auth, email)
+                    this.showLoading(false)
+                    this.showMessage('Email de recuperação enviado! Verifique sua caixa de entrada.', 'success')
+                } catch (error) {
+                    this.showLoading(false)
+                    this.handleAuthError(error)
+                }
+            }
+
+            handleAuthError(error) {
+                let message = 'Ocorreu um erro. Tente novamente.'
+
+                switch (error.code) {
+                    case 'auth/user-not-found':
+                        message = 'Usuário não encontrado.'
+                        break
+                    case 'auth/wrong-password':
+                        message = 'Senha incorreta.'
+                        break
+                    case 'auth/email-already-in-use':
+                        message = 'Este email já está em uso.'
+                        break
+                    case 'auth/weak-password':
+                        message = 'A senha é muito fraca.'
+                        break
+                    case 'auth/invalid-email':
+                        message = 'Email inválido.'
+                        break
+                    case 'auth/too-many-requests':
+                        message = 'Muitas tentativas. Tente novamente mais tarde.'
+                        break
+                    case 'auth/network-request-failed':
+                        message = 'Erro de conexão. Verifique sua internet.'
+                        break
+                }
+
+                this.showMessage(message, 'danger')
+            }
+        }
+
+        // Inicializar sistema de autenticação
+        new AuthManager()
+    </script>
+</body>
+</html>
