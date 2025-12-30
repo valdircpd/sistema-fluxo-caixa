@@ -18,7 +18,6 @@
         .btn-despesa { background: linear-gradient(45deg, #dc3545, #e74c3c); border: none; }
         .movimento-receita { border-left: 4px solid #28a745; }
         .movimento-despesa { border-left: 4px solid #dc3545; }
-        .movimento-cancelamento { border-left: 4px solid #ffc107; }
         
         .header-info {
             background: linear-gradient(45deg, #667eea, #764ba2);
@@ -26,6 +25,20 @@
             border-radius: 10px;
             padding: 15px;
             margin-bottom: 20px;
+        }
+        
+        .btn-delete {
+            background: linear-gradient(45deg, #dc3545, #c82333);
+            border: none;
+            border-radius: 5px;
+            padding: 5px 8px;
+            color: white;
+            font-size: 0.8em;
+        }
+        
+        .btn-delete:hover {
+            background: linear-gradient(45deg, #c82333, #a71e2a);
+            color: white;
         }
         
         @media (max-width: 768px) {
@@ -113,14 +126,6 @@
                                 <label for="descricaoReceita" class="form-label">Descrição</label>
                                 <textarea class="form-control" id="descricaoReceita" rows="2"></textarea>
                             </div>
-                            <div class="mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="cancelamentoReceita">
-                                    <label class="form-check-label" for="cancelamentoReceita">
-                                        Cancelamento de Receita
-                                    </label>
-                                </div>
-                            </div>
                             <button type="submit" class="btn btn-receita text-white w-100">
                                 💰 Registrar Receita
                             </button>
@@ -206,14 +211,6 @@
                             <div class="mb-3">
                                 <label for="descricaoDespesa" class="form-label">Descrição</label>
                                 <textarea class="form-control" id="descricaoDespesa" rows="2"></textarea>
-                            </div>
-                            <div class="mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="cancelamentoDespesa">
-                                    <label class="form-check-label" for="cancelamentoDespesa">
-                                        Cancelamento de Despesa
-                                    </label>
-                                </div>
                             </div>
                             <button type="submit" class="btn btn-despesa text-white w-100">
                                 💸 Registrar Despesa
@@ -325,6 +322,30 @@
         </div>
     </div>
 
+    <!-- Modal de Confirmação de Exclusão -->
+    <div class="modal fade" id="modalConfirmacaoExclusao" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">⚠️ Confirmar Exclusão</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="mensagemExclusao">Tem certeza que deseja excluir este movimento?</p>
+                    <div class="alert alert-warning">
+                        <small><strong>Atenção:</strong> Esta ação não pode ser desfeita!</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="confirmarExclusaoMovimento">
+                        🗑️ Excluir Movimento
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
@@ -338,18 +359,21 @@
             query, 
             orderBy, 
             onSnapshot, 
+            deleteDoc,
+            doc,
             Timestamp 
         } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js'
 
-        // SUBSTITUA PELAS SUAS CONFIGURAÇÕES DO FIREBASE
-        const firebaseConfig = {
-          apiKey: "AIzaSyA3e7KB1R1SbYb_HKGm52DyqAEeAN9Qpdw",
-          authDomain: "sistema-fluxo-caixa-espetinho.firebaseapp.com",
-          projectId: "sistema-fluxo-caixa-espetinho",
-          storageBucket: "sistema-fluxo-caixa-espetinho.firebasestorage.app",
-          messagingSenderId: "628667049442",
-          appId: "1:628667049442:web:125e5eb32a3274dcad05bb"
-        }
+
+            // Your web app's Firebase configuration
+            const firebaseConfig = {
+              apiKey: "AIzaSyA3e7KB1R1SbYb_HKGm52DyqAEeAN9Qpdw",
+              authDomain: "sistema-fluxo-caixa-espetinho.firebaseapp.com",
+              projectId: "sistema-fluxo-caixa-espetinho",
+              storageBucket: "sistema-fluxo-caixa-espetinho.firebasestorage.app",
+              messagingSenderId: "628667049442",
+              appId: "1:628667049442:web:125e5eb32a3274dcad05bb"
+            };
 
         // Inicializar Firebase
         const app = initializeApp(firebaseConfig)
@@ -359,6 +383,7 @@
             constructor() {
                 this.movimentos = []
                 this.chart = null
+                this.movimentoParaExcluir = null
                 this.inicializar()
             }
 
@@ -372,8 +397,11 @@
                 const hoje = new Date()
                 const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1)
                 
+                // Configura filtros padrão para o mês atual
                 document.getElementById('dataInicio').value = inicioMes.toISOString().split('T')[0]
                 document.getElementById('dataFim').value = hoje.toISOString().split('T')[0]
+                
+                // Configura data atual nos formulários
                 document.getElementById('dataReceita').value = hoje.toISOString().split('T')[0]
                 document.getElementById('dataDespesa').value = hoje.toISOString().split('T')[0]
             }
@@ -400,22 +428,37 @@
                         
                         document.getElementById('dataInicio').value = inicio.toISOString().split('T')[0]
                         document.getElementById('dataFim').value = hoje.toISOString().split('T')[0]
+                        
+                        // Aplicar filtros automaticamente
+                        this.atualizarInterface()
                     }
+                })
+
+                // Confirmação de exclusão
+                document.getElementById('confirmarExclusaoMovimento').addEventListener('click', () => {
+                    this.excluirMovimento()
                 })
             }
 
             async adicionarReceita() {
                 const categoria = document.getElementById('categoriaReceita').value
                 const valor = parseFloat(document.getElementById('valorReceita').value)
-                const data = document.getElementById('dataReceita').value
+                const dataInput = document.getElementById('dataReceita').value
                 const descricao = document.getElementById('descricaoReceita').value
-                const cancelamento = document.getElementById('cancelamentoReceita').checked
+
+                if (!categoria || !valor || !dataInput) {
+                    this.mostrarMensagem('Por favor, preencha todos os campos obrigatórios.', 'warning')
+                    return
+                }
+
+                // Converter data corretamente
+                const dataMovimento = new Date(dataInput + 'T12:00:00.000Z') // Meio-dia UTC para evitar problemas de timezone
 
                 const movimento = {
-                    tipo: cancelamento ? 'cancelamento' : 'receita',
-                    categoria: cancelamento ? 'Cancelamento' : categoria,
-                    valor: cancelamento ? -valor : valor,
-                    data: Timestamp.fromDate(new Date(data)),
+                    tipo: 'receita',
+                    categoria: categoria,
+                    valor: valor, // Valor positivo para receitas
+                    data: Timestamp.fromDate(dataMovimento),
                     descricao: descricao,
                     timestamp: Timestamp.now()
                 }
@@ -425,6 +468,7 @@
                     this.limparFormulario('formReceita')
                     this.mostrarMensagem('Receita registrada com sucesso!', 'success')
                 } catch (error) {
+                    console.error('Erro ao registrar receita:', error)
                     this.mostrarMensagem('Erro ao registrar receita: ' + error.message, 'error')
                 }
             }
@@ -432,15 +476,22 @@
             async adicionarDespesa() {
                 const categoria = document.getElementById('categoriaDespesa').value
                 const valor = parseFloat(document.getElementById('valorDespesa').value)
-                const data = document.getElementById('dataDespesa').value
+                const dataInput = document.getElementById('dataDespesa').value
                 const descricao = document.getElementById('descricaoDespesa').value
-                const cancelamento = document.getElementById('cancelamentoDespesa').checked
+
+                if (!categoria || !valor || !dataInput) {
+                    this.mostrarMensagem('Por favor, preencha todos os campos obrigatórios.', 'warning')
+                    return
+                }
+
+                // Converter data corretamente
+                const dataMovimento = new Date(dataInput + 'T12:00:00.000Z') // Meio-dia UTC para evitar problemas de timezone
 
                 const movimento = {
-                    tipo: cancelamento ? 'cancelamento' : 'despesa',
-                    categoria: cancelamento ? 'Cancelamento' : categoria,
-                    valor: cancelamento ? valor : -valor,
-                    data: Timestamp.fromDate(new Date(data)),
+                    tipo: 'despesa',
+                    categoria: categoria,
+                    valor: -valor, // Valor negativo para despesas
+                    data: Timestamp.fromDate(dataMovimento),
                     descricao: descricao,
                     timestamp: Timestamp.now()
                 }
@@ -450,6 +501,7 @@
                     this.limparFormulario('formDespesa')
                     this.mostrarMensagem('Despesa registrada com sucesso!', 'success')
                 } catch (error) {
+                    console.error('Erro ao registrar despesa:', error)
                     this.mostrarMensagem('Erro ao registrar despesa: ' + error.message, 'error')
                 }
             }
@@ -457,7 +509,7 @@
             carregarDados() {
                 const q = query(
                     collection(db, 'movimentos'),
-                    orderBy('timestamp', 'desc')
+                    orderBy('data', 'desc') // Ordenar por data do movimento, não timestamp
                 )
 
                 onSnapshot(q, (snapshot) => {
@@ -468,7 +520,11 @@
                             ...doc.data()
                         })
                     })
+                    console.log('Movimentos carregados:', this.movimentos.length)
                     this.atualizarInterface()
+                }, (error) => {
+                    console.error('Erro ao carregar movimentos:', error)
+                    this.mostrarMensagem('Erro ao carregar dados: ' + error.message, 'error')
                 })
             }
 
@@ -484,10 +540,10 @@
                 
                 let movimentosFiltrados = this.movimentos
 
+                // Aplicar filtros de data se especificados
                 if (dataInicio && dataFim) {
-                    const inicio = new Date(dataInicio)
-                    const fim = new Date(dataFim)
-                    fim.setHours(23, 59, 59, 999)
+                    const inicio = new Date(dataInicio + 'T00:00:00.000Z')
+                    const fim = new Date(dataFim + 'T23:59:59.999Z')
 
                     movimentosFiltrados = this.movimentos.filter(mov => {
                         const dataMovimento = mov.data.toDate()
@@ -506,6 +562,7 @@
                 const saldoPeriodo = totalReceitas - totalDespesas
                 const saldoTotal = this.movimentos.reduce((total, mov) => total + mov.valor, 0)
 
+                // Atualizar interface
                 document.getElementById('totalReceitas').textContent = this.formatarMoeda(totalReceitas)
                 document.getElementById('totalDespesas').textContent = this.formatarMoeda(totalDespesas)
                 document.getElementById('saldoPeriodo').textContent = this.formatarMoeda(saldoPeriodo)
@@ -514,17 +571,35 @@
                 const saldoAtualElement = document.getElementById('saldoAtual')
                 saldoAtualElement.textContent = this.formatarMoeda(saldoTotal)
                 saldoAtualElement.className = saldoTotal >= 0 ? 'saldo-positivo' : 'saldo-negativo'
+
+                console.log('Saldos calculados:', { totalReceitas, totalDespesas, saldoPeriodo, saldoTotal })
             }
 
             atualizarListaMovimentos() {
                 const container = document.getElementById('listaMovimentos')
+                const dataInicio = document.getElementById('dataInicio').value
+                const dataFim = document.getElementById('dataFim').value
                 
-                if (this.movimentos.length === 0) {
-                    container.innerHTML = '<p class="text-center text-muted">Nenhum movimento encontrado.</p>'
+                let movimentosFiltrados = this.movimentos
+
+                // Aplicar filtros de data
+                if (dataInicio && dataFim) {
+                    const inicio = new Date(dataInicio + 'T00:00:00.000Z')
+                    const fim = new Date(dataFim + 'T23:59:59.999Z')
+
+                    movimentosFiltrados = this.movimentos.filter(mov => {
+                        const dataMovimento = mov.data.toDate()
+                        return dataMovimento >= inicio && dataMovimento <= fim
+                    })
+                }
+
+                if (movimentosFiltrados.length === 0) {
+                    container.innerHTML = '<p class="text-center text-muted">Nenhum movimento encontrado no período selecionado.</p>'
                     return
                 }
 
-                const movimentosLimitados = this.movimentos.slice(0, 50)
+                // Limitar a 100 registros para performance
+                const movimentosLimitados = movimentosFiltrados.slice(0, 100)
 
                 let html = `
                     <table class="table table-hover">
@@ -535,6 +610,7 @@
                                 <th>Categoria</th>
                                 <th>Descrição</th>
                                 <th class="text-end">Valor</th>
+                                <th width="100">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -542,29 +618,67 @@
 
                 movimentosLimitados.forEach(movimento => {
                     const data = movimento.data.toDate()
-                    let tipoClass = movimento.valor > 0 ? 'movimento-receita' : 'movimento-despesa'
-                    let tipoIcon = movimento.valor > 0 ? '📈' : '📉'
-                    
-                    if (movimento.tipo === 'cancelamento') {
-                        tipoClass = 'movimento-cancelamento'
-                        tipoIcon = '⚠️'
-                    }
+                    const tipoClass = movimento.valor > 0 ? 'movimento-receita' : 'movimento-despesa'
+                    const tipoIcon = movimento.valor > 0 ? '📈' : '📉'
+                    const tipoTexto = movimento.valor > 0 ? 'Receita' : 'Despesa'
 
                     html += `
                         <tr class="${tipoClass}">
                             <td>${data.toLocaleDateString('pt-BR')}</td>
-                            <td>${tipoIcon} ${movimento.tipo.charAt(0).toUpperCase() + movimento.tipo.slice(1)}</td>
+                            <td>${tipoIcon} ${tipoTexto}</td>
                             <td>${movimento.categoria}</td>
                             <td>${movimento.descricao || '-'}</td>
                             <td class="text-end ${movimento.valor >= 0 ? 'text-success' : 'text-danger'}">
-                                ${this.formatarMoeda(movimento.valor)}
+                                ${this.formatarMoeda(Math.abs(movimento.valor))}
+                            </td>
+                            <td>
+                                <button class="btn btn-delete" onclick="window.fluxoCaixa.prepararExclusao('${movimento.id}', '${movimento.categoria}', '${this.formatarMoeda(Math.abs(movimento.valor))}')">
+                                    🗑️
+                                </button>
                             </td>
                         </tr>
                     `
                 })
 
                 html += '</tbody></table>'
+                
+                if (movimentosFiltrados.length > 100) {
+                    html += `<div class="alert alert-info mt-2">
+                        <small>Mostrando os 100 registros mais recentes de ${movimentosFiltrados.length} encontrados. Use os filtros para refinar a busca.</small>
+                    </div>`
+                }
+
                 container.innerHTML = html
+            }
+
+            prepararExclusao(id, categoria, valor) {
+                this.movimentoParaExcluir = id
+                document.getElementById('mensagemExclusao').innerHTML = `
+                    <strong>Movimento:</strong> ${categoria}<br>
+                    <strong>Valor:</strong> ${valor}<br><br>
+                    Tem certeza que deseja excluir este movimento?
+                `
+                
+                const modal = new bootstrap.Modal(document.getElementById('modalConfirmacaoExclusao'))
+                modal.show()
+            }
+
+            async excluirMovimento() {
+                if (!this.movimentoParaExcluir) return
+
+                try {
+                    await deleteDoc(doc(db, 'movimentos', this.movimentoParaExcluir))
+                    this.mostrarMensagem('Movimento excluído com sucesso!', 'success')
+                    
+                    // Fechar modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmacaoExclusao'))
+                    modal.hide()
+                    
+                    this.movimentoParaExcluir = null
+                } catch (error) {
+                    console.error('Erro ao excluir movimento:', error)
+                    this.mostrarMensagem('Erro ao excluir movimento: ' + error.message, 'error')
+                }
             }
 
             atualizarGrafico() {
@@ -655,10 +769,26 @@
             }
 
             prepararDadosGrafico() {
+                const dataInicio = document.getElementById('dataInicio').value
+                const dataFim = document.getElementById('dataFim').value
+                
+                let movimentosFiltrados = this.movimentos
+
+                // Aplicar filtros de data
+                if (dataInicio && dataFim) {
+                    const inicio = new Date(dataInicio + 'T00:00:00.000Z')
+                    const fim = new Date(dataFim + 'T23:59:59.999Z')
+
+                    movimentosFiltrados = this.movimentos.filter(mov => {
+                        const dataMovimento = mov.data.toDate()
+                        return dataMovimento >= inicio && dataMovimento <= fim
+                    })
+                }
+
                 // Agrupa movimentos por dia
                 const movimentosPorDia = {}
                 
-                this.movimentos.forEach(movimento => {
+                movimentosFiltrados.forEach(movimento => {
                     const data = movimento.data.toDate().toISOString().split('T')[0]
                     if (!movimentosPorDia[data]) {
                         movimentosPorDia[data] = { receitas: 0, despesas: 0 }
@@ -681,7 +811,7 @@
                 let saldoAtual = 0
 
                 datasOrdenadas.forEach(data => {
-                    const dataFormatada = new Date(data).toLocaleDateString('pt-BR', { 
+                    const dataFormatada = new Date(data + 'T12:00:00.000Z').toLocaleDateString('pt-BR', { 
                         day: '2-digit', 
                         month: '2-digit' 
                     })
@@ -704,7 +834,7 @@
                 const hoje = new Date().toISOString().split('T')[0]
                 if (formId === 'formReceita') {
                     document.getElementById('dataReceita').value = hoje
-                } else {
+                } else if (formId === 'formDespesa') {
                     document.getElementById('dataDespesa').value = hoje
                 }
             }
@@ -718,13 +848,14 @@
 
             mostrarMensagem(mensagem, tipo) {
                 const alertDiv = document.createElement('div')
-                alertDiv.className = `alert alert-${tipo === 'success' ? 'success' : 'danger'} alert-dismissible fade show`
+                alertDiv.className = `alert alert-${tipo === 'success' ? 'success' : tipo === 'warning' ? 'warning' : 'danger'} alert-dismissible fade show position-fixed`
+                alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 10000; min-width: 300px;'
                 alertDiv.innerHTML = `
                     ${mensagem}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 `
                 
-                document.body.insertBefore(alertDiv, document.body.firstChild)
+                document.body.appendChild(alertDiv)
                 
                 setTimeout(() => {
                     alertDiv.remove()
@@ -742,12 +873,28 @@
         window.exportarDados = function() {
             if (!window.fluxoCaixa) return
             
-            const dados = window.fluxoCaixa.movimentos.map(mov => ({
+            const dataInicio = document.getElementById('dataInicio').value
+            const dataFim = document.getElementById('dataFim').value
+            
+            let movimentosFiltrados = window.fluxoCaixa.movimentos
+
+            // Aplicar filtros de data
+            if (dataInicio && dataFim) {
+                const inicio = new Date(dataInicio + 'T00:00:00.000Z')
+                const fim = new Date(dataFim + 'T23:59:59.999Z')
+
+                movimentosFiltrados = window.fluxoCaixa.movimentos.filter(mov => {
+                    const dataMovimento = mov.data.toDate()
+                    return dataMovimento >= inicio && dataMovimento <= fim
+                })
+            }
+            
+            const dados = movimentosFiltrados.map(mov => ({
                 Data: mov.data.toDate().toLocaleDateString('pt-BR'),
-                Tipo: mov.tipo,
+                Tipo: mov.valor > 0 ? 'Receita' : 'Despesa',
                 Categoria: mov.categoria,
                 Descrição: mov.descricao || '',
-                Valor: mov.valor
+                Valor: Math.abs(mov.valor)
             }))
 
             const csv = [
